@@ -3,15 +3,12 @@ import sqlite3
 import numpy as np
 import string
 import matplotlib
-matplotlib.use('TkAgg')
 import matplotlib.pyplot as plt
 import numpy as np
 import sys
 import io
 import re
 import json
-import plotly.plotly as py
-import plotly.graph_objs as go
 
 
 from pyspark import SparkContext
@@ -20,7 +17,6 @@ from nltk.tokenize import sent_tokenize
 from nltk.classify import NaiveBayesClassifier, MaxentClassifier, SklearnClassifier
 from nltk.classify.util import accuracy
 from textblob import TextBlob
-from sklearn import svm
 from subprocess import Popen, PIPE
 
 if __name__ == "__main__":
