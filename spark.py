@@ -14,7 +14,7 @@ import json
 from pyspark import SparkContext
 from nltk.tokenize import word_tokenize
 from nltk.tokenize import sent_tokenize
-from nltk.classify import NaiveBayesClassifier, MaxentClassifier, SklearnClassifier
+from nltk.classify import NaiveBayesClassifier
 from nltk.classify.util import accuracy
 from textblob import TextBlob
 from subprocess import Popen, PIPE
@@ -23,21 +23,24 @@ if __name__ == "__main__":
     sc = SparkContext(appName="TweetSentiment")
     def format_sentence(sentence):
         return {word:True for word in word_tokenize(sentence)}
-
+    
+    
+    #Sample data for negative and positive sentiments
     pos_data=[]
-    with io.open('rt-polarity-pos.txt',encoding='latin-1') as f:
-        for line in f:
-            pos_data.append([format_sentence(line),'pos'])
+    cat = Popen(["hadoop", "fs", "-cat", "/user/surbhi/Twitter/rt-polarity-pos.txt"],stdout=PIPE)
+    for line in cat.stdout:
+        pos_data.append([format_sentence(line.decode('latin-1')),'pos'])
 
     neg_data=[]
-    with io.open('rt-polarity-neg.txt',encoding='latin-1') as f:
-        for line in f:
-            neg_data.append([format_sentence(line),'neg'])
+    cat1 = Popen(["hadoop", "fs", "-cat", "/user/surbhi/Twitter/rt-polarity-neg.txt"],stdout=PIPE)
+    for line in cat1.stdout:
+        neg_data.append([format_sentence(line.decode('latin-1')),'neg'])
 
-
+    #Divide the data into 2 sets training and testing data.
     training_data=pos_data[:4000]+ neg_data[:4000]
     testing_data=pos_data[4000:]+ neg_data[4000:]
-
+    
+    #train your model using training data
     model= NaiveBayesClassifier.train(training_data)
 
 
@@ -48,46 +51,45 @@ if __name__ == "__main__":
     total=0
     neutral=0
     file = open('raw_tweets.json').read()
-    #pprint(file)
     info = json.loads(file)
     for content in info:
+        #Data preperation : data cleaning and removal of stopwords
         sentence=content['text']
-        #sentence="Congrats @ravikiranj, i heard you wrote a new tech post on sentiment analysis"
-        #Convert to lower case
         sentence = sentence.lower()
-        #Convert www.* or https?://* to URL
-        sentence = re.sub('((www\.[^\s]+)|(https?://[^\s]+))','URL',sentence)
+        sentence = re.sub('((www\.[^\s]+)|(https?://[^\s]+))','URL',sentence) #Convert www.* or https?://* to URL
         sentence = re.sub(r'<[^>]+>',"",sentence) # HTML tags
         sentence = re.sub(r'(?:@[\w_]+)',"",sentence) # @-mentions
         sentence = re.sub(r'(?:(?:\d+,?)+(?:\.?\d+)?)', "",sentence) #numbers
         sentence = re.sub('(\s+)(a|an|and|the)(\s+)', " ", sentence)
-        #Replace #word with word
-        sentence = re.sub(r'#([^\s]+)', r'\1', sentence)
-        #strip punctuation
-        sentence = sentence.strip('\'"?,.')
-        #trim
-        sentence = sentence.strip('\'"')
+        sentence = re.sub(r'#([^\s]+)', r'\1', sentence)#Replace #word with word
+        sentence = sentence.strip('\'"?,.')#strip punctuation
+        sentence = sentence.strip('\'"')#trim
 
-
-        #print sentence
-
-
+        #Method 1 - By using Naive Bayes Classifier
         sentiment=model.classify(format_sentence(sentence))
         if sentiment=='pos':
             npos=npos+1
         else:
             nneg=nneg+1
-
+            
+        #Method 2 - By using in-built function in python textblob package
         analysis=TextBlob(sentence);
         if analysis.sentiment[0]<=0 :
             neg=neg+1
         else:
             pos=pos+1
         total=total+1
-    print "negative = %s positive = %s "%(neg,pos)
-
-    print "negative = %s positive = %s "%(nneg,npos)
+        
+    #Calculating percentage of negative and positive reviews
+    neg_per=float(neg*100)/total
+    pos_per=float(pos*100)/total
+    nneg_per=float(nneg*100)/total
+    npos_per=float(npos*100)/total
+    
+    print "Using TextBlob : negative = %s(%0.2f%%) positive = %s(%0.2f%%) "%(neg,neg_per,pos,pos_per)
+    print "Using Naive Bayes Algorithm : negative = %s(%0.2f%%) positive = %s(%0.2f%%) "%(nneg,nneg_per,npos,npos_per)
     performance = [neg,pos]
+    
     # data to plot
     n_groups = 2
     txt_blob = (neg,pos)
@@ -116,6 +118,7 @@ if __name__ == "__main__":
 
     plt.tight_layout()
     plt.show()
+    plt.savefig("output.png")
     sc.stop()
 
 
