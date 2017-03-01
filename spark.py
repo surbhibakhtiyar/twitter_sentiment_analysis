@@ -121,7 +121,7 @@ if __name__ == "__main__":
 
     plt.tight_layout()
     plt.savefig('output.png')
-    os.system('hadoop fs -copyFromLocal output.png  /user/path/to/hdfs_folder/output.png')
+    os.system('hadoop fs -copyFromLocal output.png  /user/path/to/hdfs_folder/output.png') #store plot in hdfs 
     plt.show()
     sc.stop()
 
