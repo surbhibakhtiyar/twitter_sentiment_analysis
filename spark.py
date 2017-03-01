@@ -3,6 +3,7 @@ import sqlite3
 import numpy as np
 import string
 import matplotlib
+matplotlib.use('agg')
 import matplotlib.pyplot as plt
 import numpy as np
 import sys
@@ -50,9 +51,11 @@ if __name__ == "__main__":
     npos=0
     total=0
     neutral=0
-    file = open('raw_tweets.json').read()
-    info = json.loads(file)
-    for content in info:
+    file = Popen(["hadoop", "fs", "-cat", "/user/surbhi/Twitter/raw_tweets.json"],stdout=PIPE)
+    str=  file.stdout.read()
+    str.encode('latin-1')
+    d=json.loads(str)
+    for content in d:
         #Data preperation : data cleaning and removal of stopwords
         sentence=content['text']
         sentence = sentence.lower()
@@ -117,8 +120,9 @@ if __name__ == "__main__":
     plt.legend()
 
     plt.tight_layout()
+    plt.savefig('output.png')
+    os.system('hadoop fs -copyFromLocal output.png  /user/path/to/hdfs_folder/output.png')
     plt.show()
-    plt.savefig("output.png")
     sc.stop()
 
 
