@@ -28,12 +28,12 @@ if __name__ == "__main__":
     
     #Sample data for negative and positive sentiments
     pos_data=[]
-    cat = Popen(["hadoop", "fs", "-cat", "/user/surbhi/Twitter/rt-polarity-pos.txt"],stdout=PIPE)
+    cat = Popen(["hadoop", "fs", "-cat", "/user/surbhi/Twitter/pos.txt"],stdout=PIPE)
     for line in cat.stdout:
         pos_data.append([format_sentence(line.decode('latin-1')),'pos'])
 
     neg_data=[]
-    cat1 = Popen(["hadoop", "fs", "-cat", "/user/surbhi/Twitter/rt-polarity-neg.txt"],stdout=PIPE)
+    cat1 = Popen(["hadoop", "fs", "-cat", "/user/surbhi/Twitter/neg.txt"],stdout=PIPE)
     for line in cat1.stdout:
         neg_data.append([format_sentence(line.decode('latin-1')),'neg'])
 
